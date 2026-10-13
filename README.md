@@ -23,13 +23,13 @@ incidents when checks fail or become slow.
 
 ## Screenshots
 
-![InfraSight Dashboard](image/dashboard.png)
+![InfraSight Dashboard](image/dashboard.jpg)
 
-![InfraSight Endpoints](image/endpoints.png)
+![InfraSight Endpoints](image/endpoint.jpg)
 
-![InfraSight Incidents](image/incidents.png)
+![InfraSight Incidents](image/incidents.jpg)
 
-![InfraSight Reports](image/reports.png)
+![InfraSight Reports](image/monitoringhistory.jpg)
 
 ## Technology Stack
 
