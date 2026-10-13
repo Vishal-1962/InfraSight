@@ -23,24 +23,13 @@ incidents when checks fail or become slow.
 
 ## Screenshots
 
-Add your actual application screenshots to the `image/` folder. Update
-the filenames below to match the files in your repository.
+![InfraSight Dashboard](image/dashboard.png)
 
-  -----------------------------------------------------------------------
-  Dashboard                           Endpoints
-  ----------------------------------- -----------------------------------
-  ![InfraSight                        ![InfraSight
-  dashboard](image/dashboard.png)     endpoints](image/endpoints.png)
+![InfraSight Endpoints](image/endpoints.png)
 
-  -----------------------------------------------------------------------
+![InfraSight Incidents](image/incidents.png)
 
-  -----------------------------------------------------------------------
-  Incidents                           Reports
-  ----------------------------------- -----------------------------------
-  ![InfraSight                        ![InfraSight
-  incidents](image/incidents.png)     reports](image/reports.png)
-
-  -----------------------------------------------------------------------
+![InfraSight Reports](image/reports.png)
 
 ## Technology Stack
 
