@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, content, active)">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${title} + ' - InfraSight'">InfraSight</title>
+  <link rel="stylesheet" th:href="@{/vendor/bootstrap.min.css}">
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body th:data-refresh="${autoRefresh} ? 'on'">
+<div class="app">
+
+  <aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-label="Main navigation">
+    <div class="sidebar-inner">
+      <div class="brand">
+        <a th:href="@{/}">InfraSight</a>
+        <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close menu"></button>
+      </div>
+      <nav>
+        <ul class="nav-list">
+          <li><a th:href="@{/}" th:classappend="${active == 'dashboard'} ? 'active'">Dashboard</a></li>
+          <li><a th:href="@{/endpoints}" th:classappend="${active == 'endpoints'} ? 'active'">Endpoints</a></li>
+          <li><a th:href="@{/history}" th:classappend="${active == 'history'} ? 'active'">Monitoring history</a></li>
+          <li><a th:href="@{/incidents}" th:classappend="${active == 'incidents'} ? 'active'">Incidents</a></li>
+          <li><a th:href="@{/reports}" th:classappend="${active == 'reports'} ? 'active'">Reports</a></li>
+        </ul>
+      </nav>
+      <p class="sidebar-note">For trusted local use. There is no login, so do not expose this application to a network without access control.</p>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="menu-btn d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">Menu</button>
+        <span class="topbar-title" th:text="${title}">Page</span>
+      </div>
+      <a class="btn btn-primary btn-sm" th:href="@{/endpoints/new}">Add endpoint</a>
+    </header>
+
+    <main class="content">
+      <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
+      <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+      <th:block th:replace="${content}"></th:block>
+    </main>
+  </div>
+</div>
+
+<div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="delete-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="delete-form" method="post" th:action="@{/endpoints/0/delete}">
+        <div class="modal-header">
+          <h2 class="modal-title" id="delete-title">Delete endpoint</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-0">Delete <strong id="delete-name">this endpoint</strong>? Its check history and incidents are deleted too. This cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete endpoint</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/vendor/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/vendor/chart.umd.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('Reports', ~{::content}, 'reports')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-head">
+    <div>
+      <h1>Reports</h1>
+      <p>Availability, response times and incidents for a date range. Defaults to the last 7 days.</p>
+    </div>
+  </div>
+
+  <form class="filters" method="get" th:action="@{/reports}">
+    <div class="field">
+      <label for="from">From</label>
+      <input type="date" class="form-control" id="from" name="from" th:value="${from}">
+    </div>
+    <div class="field">
+      <label for="to">To</label>
+      <input type="date" class="form-control" id="to" name="to" th:value="${to}">
+    </div>
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Update report</button>
+      <a class="btn btn-outline-secondary" th:href="@{/reports}">Reset</a>
+    </div>
+  </form>
+
+  <div class="panel" th:if="${report.overall().total() == 0 and report.incidents().total() == 0}">
+    <div class="empty">
+      <strong>No data for this period</strong>
+      <p>There are no checks or incidents between these dates. Choose a wider range or add an endpoint.</p>
+    </div>
+  </div>
+
+  <th:block th:unless="${report.overall().total() == 0 and report.incidents().total() == 0}">
+    <div class="metrics">
+      <div class="metric"><div class="label">Checks</div><div class="value" th:text="${report.overall().total()}">0</div></div>
+      <div class="metric"><div class="label">Successful</div><div class="value" th:text="${report.overall().success()}">0</div></div>
+      <div class="metric"><div class="label">Failed</div><div class="value" th:classappend="${report.overall().failed() > 0} ? 'is-down'" th:text="${report.overall().failed()}">0</div></div>
+      <div class="metric"><div class="label">Availability</div><div class="value" th:text="${report.overall().availability() != null} ? (${#numbers.formatDecimal(report.overall().availability(), 1, 2)} + '%') : '-'">-</div></div>
+      <div class="metric"><div class="label">Avg response</div><div class="value" th:text="${report.overall().avgMs() != null} ? (${#numbers.formatDecimal(report.overall().avgMs(), 1, 0)} + ' ms') : '-'">-</div></div>
+      <div class="metric"><div class="label">Max response</div><div class="value" th:text="${report.overall().maxMs() != null} ? (${report.overall().maxMs()} + ' ms') : '-'">-</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Endpoint availability</h2></div>
+      <div class="empty compact" th:if="${#lists.isEmpty(report.rows())}">No checks in this period.</div>
+      <div class="table-responsive" th:unless="${#lists.isEmpty(report.rows())}">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Endpoint</th>
+              <th class="num">Availability</th>
+              <th class="num">Successful</th>
+              <th class="num">Failed</th>
+              <th class="num">Avg response</th>
+              <th class="num">Max response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="r : ${report.rows()}">
+              <td><a th:href="@{/endpoints/{id}(id=${r.id()})}" th:text="${r.name()}">Endpoint</a></td>
+              <td class="num mono" th:text="${r.availability() != null} ? (${#numbers.formatDecimal(r.availability(), 1, 2)} + '%') : '-'">-</td>
+              <td class="num mono" th:text="${r.success()}">0</td>
+              <td class="num mono" th:classappend="${r.failed() > 0} ? 'text-down'" th:text="${r.failed()}">0</td>
+              <td class="num mono" th:text="${r.avgMs() != null} ? (${#numbers.formatDecimal(r.avgMs(), 1, 0)} + ' ms') : '-'">-</td>
+              <td class="num mono" th:text="${r.maxMs() != null} ? (${r.maxMs()} + ' ms') : '-'">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Most frequently failing endpoints</h2></div>
+      <div class="empty compact" th:if="${#lists.isEmpty(report.topFailing())}">No failed checks in this period.</div>
+      <div class="table-responsive" th:unless="${#lists.isEmpty(report.topFailing())}">
+        <table class="table table-hover">
+          <thead>
+            <tr><th>Endpoint</th><th class="num">Failed checks</th><th class="num">Total checks</th><th class="num">Failure rate</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="r : ${report.topFailing()}">
+              <td><a th:href="@{/endpoints/{id}(id=${r.id()})}" th:text="${r.name()}">Endpoint</a></td>
+              <td class="num mono text-down" th:text="${r.failed()}">0</td>
+              <td class="num mono" th:text="${r.total()}">0</td>
+              <td class="num mono" th:text="${#numbers.formatDecimal(r.failed() * 100.0 / r.total(), 1, 2)} + '%'">0%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Incident summary</h2><a class="small-text" th:href="@{/incidents(status='all')}">View incidents</a></div>
+      <div class="empty compact" th:if="${report.incidents().total() == 0}">No incidents were opened in this period.</div>
+      <th:block th:unless="${report.incidents().total() == 0}">
+        <div class="metrics" style="border:0;border-radius:0;margin:0;border-bottom:1px solid var(--border)">
+          <div class="metric"><div class="label">Opened</div><div class="value" th:text="${report.incidents().total()}">0</div></div>
+          <div class="metric"><div class="label">Critical</div><div class="value" th:text="${report.incidents().critical()}">0</div></div>
+          <div class="metric"><div class="label">Warning</div><div class="value" th:text="${report.incidents().warning()}">0</div></div>
+          <div class="metric"><div class="label">Open</div><div class="value" th:text="${report.incidents().open()}">0</div></div>
+          <div class="metric"><div class="label">Acknowledged</div><div class="value" th:text="${report.incidents().acknowledged()}">0</div></div>
+          <div class="metric"><div class="label">Resolved</div><div class="value" th:text="${report.incidents().resolved()}">0</div></div>
+        </div>
+        <div th:replace="~{fragments/components :: incidentList(${report.incidentList()})}"></div>
+      </th:block>
+    </div>
+  </th:block>
+</th:block>
+</body>
+</html>

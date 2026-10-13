@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('Incidents', ~{::content}, 'incidents')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-head">
+    <div>
+      <h1>Incidents</h1>
+      <p>Raised when an endpoint breaks its failure or slow-response rule. One incident is kept open per problem.</p>
+    </div>
+  </div>
+
+  <form class="filters" method="get" th:action="@{/incidents}">
+    <div class="field">
+      <label for="status">Status</label>
+      <select class="form-select" id="status" name="status">
+        <option value="active" th:selected="${status == 'active'}">Open and acknowledged</option>
+        <option value="open" th:selected="${status == 'open'}">Open</option>
+        <option value="acknowledged" th:selected="${status == 'acknowledged'}">Acknowledged</option>
+        <option value="resolved" th:selected="${status == 'resolved'}">Resolved</option>
+        <option value="all" th:selected="${status == 'all'}">All</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="endpointId">Endpoint</label>
+      <select class="form-select" id="endpointId" name="endpointId">
+        <option value="0" th:selected="${endpointId == 0}">All endpoints</option>
+        <option th:each="e : ${endpoints}" th:value="${e.id}" th:text="${e.name}" th:selected="${e.id == endpointId}">Endpoint</option>
+      </select>
+    </div>
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Apply filters</button>
+      <a class="btn btn-outline-secondary" th:href="@{/incidents}">Reset</a>
+    </div>
+  </form>
+
+  <div class="panel">
+    <div class="empty" th:if="${incidents.totalElements == 0}">
+      <strong>No incidents found</strong>
+      <p>Incidents appear here when an endpoint fails its configured number of consecutive checks.</p>
+    </div>
+    <div class="table-responsive" th:unless="${incidents.totalElements == 0}">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Opened</th>
+            <th>Endpoint</th>
+            <th>Type</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th>Details</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="i : ${incidents.content}">
+            <td class="nowrap mono" th:text="${#temporals.format(i.openedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 10:00</td>
+            <td><a th:href="@{/endpoints/{id}(id=${i.endpoint.id})}" th:text="${i.endpoint.name}">Endpoint</a></td>
+            <td th:text="${i.type.label}">Endpoint down</td>
+            <td><span class="tag" th:classappend="${i.severity.name() == 'CRITICAL'} ? 'critical' : 'warning'" th:text="${i.severityLabel}">Critical</span></td>
+            <td><span class="status"><span class="dot" th:classappend="${#strings.toLowerCase(i.status.name())}"></span><span th:text="${i.statusLabel}">Open</span></span></td>
+            <td>
+              <span th:text="${i.message}">Message</span>
+              <span class="cell-sub" th:if="${i.acknowledgedAt != null}" th:text="'Acknowledged ' + ${#temporals.format(i.acknowledgedAt, 'yyyy-MM-dd HH:mm')}"></span>
+              <span class="cell-sub" th:if="${i.resolvedAt != null}"
+                    th:text="'Resolved ' + ${#temporals.format(i.resolvedAt, 'yyyy-MM-dd HH:mm')} + (${i.resolutionNote != null} ? ('. Note: ' + ${i.resolutionNote}) : '')"></span>
+            </td>
+            <td class="actions">
+              <form method="post" th:if="${i.status.name() == 'OPEN'}" th:action="@{/incidents/{id}/acknowledge(id=${i.id})}">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Acknowledge</button>
+              </form>
+              <button type="button" class="btn btn-sm btn-outline-secondary" th:if="${i.status.name() != 'RESOLVED'}"
+                      data-bs-toggle="modal" data-bs-target="#resolve-modal"
+                      th:data-resolve-url="@{/incidents/{id}/resolve(id=${i.id})}"
+                      th:data-resolve-name="${i.endpoint.name}">Resolve</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pager" th:if="${incidents.totalPages > 1}">
+      <span th:text="'Page ' + ${incidents.number + 1} + ' of ' + ${incidents.totalPages}">Page 1 of 2</span>
+      <span>
+        <a class="btn btn-sm btn-outline-secondary" th:classappend="${incidents.first} ? 'disabled'"
+           th:href="@{/incidents(status=${status},endpointId=${endpointId},page=${incidents.number - 1})}">Previous</a>
+        <a class="btn btn-sm btn-outline-secondary" th:classappend="${incidents.last} ? 'disabled'"
+           th:href="@{/incidents(status=${status},endpointId=${endpointId},page=${incidents.number + 1})}">Next</a>
+      </span>
+    </div>
+  </div>
+
+  <div class="modal fade" id="resolve-modal" tabindex="-1" aria-labelledby="resolve-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="resolve-form" method="post" th:action="@{/incidents/0/resolve}">
+          <div class="modal-header">
+            <h2 class="modal-title" id="resolve-title">Resolve incident</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Mark the incident for <strong id="resolve-name"></strong> as resolved.</p>
+            <label class="form-label" for="resolve-note">Resolution note</label>
+            <textarea class="form-control" id="resolve-note" name="note" rows="3" maxlength="1000" placeholder="What was the cause and what fixed it?"></textarea>
+            <div class="form-text">Optional. Saved with the incident history.</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Resolve incident</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</th:block>
+</body>
+</html>

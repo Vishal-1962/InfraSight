@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Table of check results. -->
+<div th:fragment="checkTable(checks, showEndpoint)" class="table-responsive">
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th th:if="${showEndpoint}">Endpoint</th>
+        <th>Result</th>
+        <th class="num">HTTP status</th>
+        <th class="num">Response time</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="c : ${checks}">
+        <td class="nowrap mono" th:text="${#temporals.format(c.checkedAt, 'yyyy-MM-dd HH:mm:ss')}">2026-01-01 10:00:00</td>
+        <td th:if="${showEndpoint}"><a th:href="@{/endpoints/{id}(id=${c.endpoint.id})}" th:text="${c.endpoint.name}">Endpoint</a></td>
+        <td>
+          <span class="status"><span class="dot" th:classappend="${c.success} ? 'up' : 'down'"></span><span th:text="${c.success} ? 'Success' : 'Failed'">Success</span></span>
+        </td>
+        <td class="num mono" th:text="${c.statusCode != null} ? ${c.statusCode} : '-'">200</td>
+        <td class="num mono" th:text="${c.responseTimeMs != null} ? (${c.responseTimeMs} + ' ms') : '-'">120 ms</td>
+        <td class="muted truncate" th:text="${c.errorMessage}" th:title="${c.errorMessage}"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Read-only list of incidents. -->
+<div th:fragment="incidentList(incidents)" class="table-responsive">
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Opened</th>
+        <th>Endpoint</th>
+        <th>Severity</th>
+        <th>Status</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="i : ${incidents}">
+        <td class="nowrap mono" th:text="${#temporals.format(i.openedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01 10:00</td>
+        <td><a th:href="@{/endpoints/{id}(id=${i.endpoint.id})}" th:text="${i.endpoint.name}">Endpoint</a></td>
+        <td><span class="tag" th:classappend="${i.severity.name() == 'CRITICAL'} ? 'critical' : 'warning'" th:text="${i.severityLabel}">Critical</span></td>
+        <td><span class="status"><span class="dot" th:classappend="${#strings.toLowerCase(i.status.name())}"></span><span th:text="${i.statusLabel}">Open</span></span></td>
+        <td class="muted truncate" th:text="${i.message}" th:title="${i.message}"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

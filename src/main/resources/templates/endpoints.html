@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('Endpoints', ~{::content}, 'endpoints')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-head">
+    <div>
+      <h1>Endpoints</h1>
+      <p>HTTP and HTTPS addresses that InfraSight checks on a schedule.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-primary" th:href="@{/endpoints/new}">Add endpoint</a></div>
+  </div>
+
+  <div class="panel">
+    <div class="empty" th:if="${#lists.isEmpty(endpoints)}">
+      <strong>No endpoints yet</strong>
+      <p>Add the first endpoint to start monitoring. Use a public http:// or https:// address.</p>
+      <a class="btn btn-primary" th:href="@{/endpoints/new}">Add endpoint</a>
+    </div>
+    <div class="table-responsive" th:unless="${#lists.isEmpty(endpoints)}">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Endpoint</th>
+            <th>Status</th>
+            <th>Last check</th>
+            <th class="num">Response time</th>
+            <th class="num">Interval</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="e : ${endpoints}">
+            <td>
+              <a th:href="@{/endpoints/{id}(id=${e.id})}" th:text="${e.name}">Name</a>
+              <span class="cell-sub mono truncate" th:text="${e.url}" th:title="${e.url}">https://example.com</span>
+            </td>
+            <td><span class="status"><span class="dot" th:classappend="${e.statusClass}"></span><span th:text="${e.statusLabel}">Up</span></span></td>
+            <td class="nowrap mono" th:text="${#temporals.format(e.lastCheckedAt, 'yyyy-MM-dd HH:mm:ss')} ?: '-'">-</td>
+            <td class="num mono" th:text="${e.lastResponseTimeMs != null} ? (${e.lastResponseTimeMs} + ' ms') : '-'">-</td>
+            <td class="num mono" th:text="${e.intervalSeconds} + ' s'">60 s</td>
+            <td class="actions">
+              <form method="post" th:action="@{/endpoints/{id}/check(id=${e.id})}" data-loading="Checking...">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Check now</button>
+              </form>
+              <form method="post" th:action="@{/endpoints/{id}/toggle(id=${e.id})}">
+                <button type="submit" class="btn btn-sm btn-outline-secondary" th:text="${e.enabled} ? 'Disable' : 'Enable'">Disable</button>
+              </form>
+              <a class="btn btn-sm btn-outline-secondary" th:href="@{/endpoints/{id}/edit(id=${e.id})}">Edit</a>
+              <button type="button" class="btn-text-danger" data-bs-toggle="modal" data-bs-target="#delete-modal"
+                      th:data-delete-url="@{/endpoints/{id}/delete(id=${e.id})}" th:data-delete-name="${e.name}">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</th:block>
+</body>
+</html>

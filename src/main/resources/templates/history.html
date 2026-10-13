@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('Monitoring history', ~{::content}, 'history')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-head">
+    <div>
+      <h1>Monitoring history</h1>
+      <p>Stored check results. Defaults to the last 7 days.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn btn-outline-secondary" th:href="@{/history/export(endpointId=${endpointId},from=${from},to=${to},result=${result})}">Export CSV</a>
+    </div>
+  </div>
+
+  <form class="filters" method="get" th:action="@{/history}">
+    <div class="field">
+      <label for="endpointId">Endpoint</label>
+      <select class="form-select" id="endpointId" name="endpointId">
+        <option value="0" th:selected="${endpointId == 0}">All endpoints</option>
+        <option th:each="e : ${endpoints}" th:value="${e.id}" th:text="${e.name}" th:selected="${e.id == endpointId}">Endpoint</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="from">From</label>
+      <input type="date" class="form-control" id="from" name="from" th:value="${from}">
+    </div>
+    <div class="field">
+      <label for="to">To</label>
+      <input type="date" class="form-control" id="to" name="to" th:value="${to}">
+    </div>
+    <div class="field">
+      <label for="result">Result</label>
+      <select class="form-select" id="result" name="result">
+        <option value="all" th:selected="${result == 'all'}">All results</option>
+        <option value="success" th:selected="${result == 'success'}">Successful</option>
+        <option value="failed" th:selected="${result == 'failed'}">Failed</option>
+      </select>
+    </div>
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Apply filters</button>
+      <a class="btn btn-outline-secondary" th:href="@{/history}">Reset</a>
+    </div>
+  </form>
+
+  <div class="metrics">
+    <div class="metric"><div class="label">Checks</div><div class="value" th:text="${summary.total()}">0</div></div>
+    <div class="metric"><div class="label">Successful</div><div class="value" th:text="${summary.success()}">0</div></div>
+    <div class="metric"><div class="label">Failed</div><div class="value" th:classappend="${summary.failed() > 0} ? 'is-down'" th:text="${summary.failed()}">0</div></div>
+    <div class="metric"><div class="label">Availability</div><div class="value" th:text="${summary.availability() != null} ? (${#numbers.formatDecimal(summary.availability(), 1, 2)} + '%') : '-'">-</div></div>
+    <div class="metric"><div class="label">Avg response</div><div class="value" th:text="${summary.avgMs() != null} ? (${#numbers.formatDecimal(summary.avgMs(), 1, 0)} + ' ms') : '-'">-</div></div>
+    <div class="metric"><div class="label">Max response</div><div class="value" th:text="${summary.maxMs() != null} ? (${summary.maxMs()} + ' ms') : '-'">-</div></div>
+  </div>
+
+  <div class="chart-grid" th:if="${hasTrend}">
+    <div class="panel">
+      <div class="panel-head"><h2>Response time (ms)</h2><span class="muted small-text">Average per hour or day</span></div>
+      <div class="panel-body"><div class="chart-box"><canvas th:data-chart="${trendJson}" data-metric="response" aria-label="Response time trend"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Availability (%)</h2><span class="muted small-text">Per hour or day</span></div>
+      <div class="panel-body"><div class="chart-box"><canvas th:data-chart="${trendJson}" data-metric="availability" aria-label="Availability trend"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Results</h2><span class="muted small-text" th:text="${checks.totalElements} + ' matching checks'">0 matching checks</span></div>
+    <div class="empty" th:if="${checks.totalElements == 0}">
+      <strong>No checks match these filters</strong>
+      <p>Widen the date range, choose another endpoint, or wait for the next scheduled check.</p>
+    </div>
+    <th:block th:unless="${checks.totalElements == 0}"><div th:replace="~{fragments/components :: checkTable(${checks.content}, true)}"></div></th:block>
+    <div class="pager" th:if="${checks.totalPages > 1}">
+      <span th:text="'Page ' + ${checks.number + 1} + ' of ' + ${checks.totalPages}">Page 1 of 2</span>
+      <span>
+        <a class="btn btn-sm btn-outline-secondary" th:classappend="${checks.first} ? 'disabled'"
+           th:href="@{/history(endpointId=${endpointId},from=${from},to=${to},result=${result},page=${checks.number - 1})}">Previous</a>
+        <a class="btn btn-sm btn-outline-secondary" th:classappend="${checks.last} ? 'disabled'"
+           th:href="@{/history(endpointId=${endpointId},from=${from},to=${to},result=${result},page=${checks.number + 1})}">Next</a>
+      </span>
+    </div>
+  </div>
+</th:block>
+</body>
+</html>

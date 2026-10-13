@@ -1,0 +1,28 @@
+InfraSight - running locally (Windows 10, Java 21, MySQL 8)
+
+1. Make sure MySQL is running. The default settings create the schema "infrasight_db" for you
+   (the MySQL user needs the CREATE privilege; root has it). To use a database you created
+   yourself, set DB_URL to your own JDBC URL.
+
+2. Open PowerShell in this folder and run:
+       .\run-infrasight.ps1
+   It checks Java 21, asks for your MySQL username and password (the password is hidden and
+   never saved), then starts the app with Maven. If PowerShell blocks the script:
+       powershell -ExecutionPolicy Bypass -File .\run-infrasight.ps1
+   The first start downloads dependencies, so it needs internet access once.
+
+3. Open http://localhost:8080
+
+Using IntelliJ instead: open the folder as a Maven project, edit the run configuration of
+InfraSightApplication and add environment variables DB_USERNAME and DB_PASSWORD
+(DB_URL is optional), then run it.
+
+Optional settings (environment variables): PORT (default 8080), RETENTION_DAYS (default 30,
+check results older than this are deleted), ALLOW_PRIVATE_TARGETS (default false; set true to
+monitor localhost or private-network addresses).
+
+Notes
+- Tables are created and updated automatically (spring.jpa.hibernate.ddl-auto=update).
+- The app listens on 127.0.0.1 only and has NO login. It is meant for trusted local use.
+  Do not expose it to a network without adding access control.
+- Monitoring starts with an empty database. Add an endpoint on the Endpoints page.

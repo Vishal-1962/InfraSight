@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(${endpoint.name}, ~{::content}, 'endpoints')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-head">
+    <div>
+      <h1 th:text="${endpoint.name}">Endpoint</h1>
+      <p class="mono" th:text="${endpoint.url}">https://example.com</p>
+    </div>
+    <div class="page-actions">
+      <form method="post" th:action="@{/endpoints/{id}/check(id=${endpoint.id})}" data-loading="Checking...">
+        <input type="hidden" name="from" value="detail">
+        <button type="submit" class="btn btn-outline-secondary">Check now</button>
+      </form>
+      <form method="post" th:action="@{/endpoints/{id}/toggle(id=${endpoint.id})}">
+        <input type="hidden" name="from" value="detail">
+        <button type="submit" class="btn btn-outline-secondary" th:text="${endpoint.enabled} ? 'Disable' : 'Enable'">Disable</button>
+      </form>
+      <a class="btn btn-outline-secondary" th:href="@{/endpoints/{id}/edit(id=${endpoint.id})}">Edit</a>
+      <button type="button" class="btn btn-outline-secondary text-danger" data-bs-toggle="modal" data-bs-target="#delete-modal"
+              th:data-delete-url="@{/endpoints/{id}/delete(id=${endpoint.id})}" th:data-delete-name="${endpoint.name}">Delete</button>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="label">Status</div>
+      <div class="value"><span class="status"><span class="dot" th:classappend="${endpoint.statusClass}"></span><span th:text="${endpoint.statusLabel}">Up</span></span></div>
+      <div class="sub" th:text="${endpoint.lastCheckedAt != null} ? ${#temporals.format(endpoint.lastCheckedAt, 'yyyy-MM-dd HH:mm:ss')} : 'Not checked yet'">-</div>
+    </div>
+    <div class="metric">
+      <div class="label">Availability (24 h)</div>
+      <div class="value" th:text="${summary.availability() != null} ? (${#numbers.formatDecimal(summary.availability(), 1, 2)} + '%') : '-'">-</div>
+      <div class="sub" th:text="${summary.total()} + ' checks'">0 checks</div>
+    </div>
+    <div class="metric">
+      <div class="label">Avg response (24 h)</div>
+      <div class="value" th:text="${summary.avgMs() != null} ? (${#numbers.formatDecimal(summary.avgMs(), 1, 0)} + ' ms') : '-'">-</div>
+    </div>
+    <div class="metric">
+      <div class="label">Max response (24 h)</div>
+      <div class="value" th:text="${summary.maxMs() != null} ? (${summary.maxMs()} + ' ms') : '-'">-</div>
+    </div>
+    <div class="metric">
+      <div class="label">Failed checks (24 h)</div>
+      <div class="value" th:classappend="${summary.failed() > 0} ? 'is-down'" th:text="${summary.failed()}">0</div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="panel">
+      <div class="panel-head"><h2>Response time (ms)</h2><span class="muted small-text">Last 24 hours, hourly average</span></div>
+      <div class="panel-body">
+        <div class="chart-box" th:if="${hasTrend}"><canvas th:data-chart="${trendJson}" data-metric="response" aria-label="Response time trend"></canvas></div>
+        <div class="empty compact" th:unless="${hasTrend}">No checks in the last 24 hours.</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Availability (%)</h2><span class="muted small-text">Last 24 hours, hourly</span></div>
+      <div class="panel-body">
+        <div class="chart-box" th:if="${hasTrend}"><canvas th:data-chart="${trendJson}" data-metric="availability" aria-label="Availability trend"></canvas></div>
+        <div class="empty compact" th:unless="${hasTrend}">No checks in the last 24 hours.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Configuration</h2></div>
+    <dl class="kv">
+      <dt>Check interval</dt><dd th:text="${endpoint.intervalSeconds} + ' seconds'">60 seconds</dd>
+      <dt>Timeout</dt><dd th:text="${endpoint.timeoutSeconds} + ' seconds'">10 seconds</dd>
+      <dt>Healthy response</dt><dd th:text="${endpoint.expectedStatus != null} ? ('HTTP ' + ${endpoint.expectedStatus}) : 'Any 2xx or 3xx status'">Any 2xx or 3xx status</dd>
+      <dt>Failure rule</dt><dd th:text="'Open an incident after ' + ${endpoint.failureThreshold} + ' consecutive failed checks'">-</dd>
+      <dt>Slow response rule</dt><dd th:text="${endpoint.slowThresholdMs != null} ? ('Warn after ' + ${endpoint.failureThreshold} + ' consecutive checks slower than ' + ${endpoint.slowThresholdMs} + ' ms') : 'Not set'">Not set</dd>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Recent incidents</h2><a class="small-text" th:href="@{/incidents(endpointId=${endpoint.id},status='all')}">View all</a></div>
+    <div class="empty compact" th:if="${#lists.isEmpty(incidents)}">No incidents for this endpoint.</div>
+    <th:block th:unless="${#lists.isEmpty(incidents)}"><div th:replace="~{fragments/components :: incidentList(${incidents})}"></div></th:block>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Check history</h2>
+      <a class="small-text" th:href="@{/history(endpointId=${endpoint.id})}">Filter and export</a>
+    </div>
+    <div class="empty compact" th:if="${checks.totalElements == 0}">No checks have run yet.</div>
+    <th:block th:unless="${checks.totalElements == 0}"><div th:replace="~{fragments/components :: checkTable(${checks.content}, false)}"></div></th:block>
+    <div class="pager" th:if="${checks.totalPages > 1}">
+      <span th:text="'Page ' + ${checks.number + 1} + ' of ' + ${checks.totalPages}">Page 1 of 2</span>
+      <span>
+        <a class="btn btn-sm btn-outline-secondary" th:classappend="${checks.first} ? 'disabled'" th:href="@{/endpoints/{id}(id=${endpoint.id},page=${checks.number - 1})}">Previous</a>
+        <a class="btn btn-sm btn-outline-secondary" th:classappend="${checks.last} ? 'disabled'" th:href="@{/endpoints/{id}(id=${endpoint.id},page=${checks.number + 1})}">Next</a>
+      </span>
+    </div>
+  </div>
+</th:block>
+</body>
+</html>

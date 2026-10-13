@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('Dashboard', ~{::content}, 'dashboard')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-head">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Health of your endpoints over the last 24 hours. This page refreshes every 30 seconds.</p>
+    </div>
+  </div>
+
+  <div class="panel" th:if="${stats.totalEndpoints() == 0}">
+    <div class="empty">
+      <strong>No endpoints yet</strong>
+      <p>Add an HTTP or HTTPS endpoint and InfraSight starts checking it automatically.</p>
+      <a class="btn btn-primary" th:href="@{/endpoints/new}">Add endpoint</a>
+    </div>
+  </div>
+
+  <th:block th:unless="${stats.totalEndpoints() == 0}" th:with="s=${stats.last24h()}">
+    <div class="metrics">
+      <div class="metric">
+        <div class="label">Monitored endpoints</div>
+        <div class="value" th:text="${stats.monitored()}">0</div>
+        <div class="sub" th:text="'of ' + ${stats.totalEndpoints()} + ' total'">of 0 total</div>
+      </div>
+      <div class="metric">
+        <div class="label">Healthy</div>
+        <div class="value" th:text="${stats.healthy()}">0</div>
+      </div>
+      <div class="metric">
+        <div class="label">Unhealthy</div>
+        <div class="value" th:classappend="${stats.down() > 0} ? 'is-down'" th:text="${stats.down()}">0</div>
+      </div>
+      <div class="metric">
+        <div class="label">Open incidents</div>
+        <div class="value" th:text="${stats.openIncidents()}">0</div>
+      </div>
+      <div class="metric">
+        <div class="label">Avg response time</div>
+        <div class="value" th:text="${s.avgMs() != null} ? (${#numbers.formatDecimal(s.avgMs(), 1, 0)} + ' ms') : '-'">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Availability</div>
+        <div class="value" th:text="${s.availability() != null} ? (${#numbers.formatDecimal(s.availability(), 1, 2)} + '%') : '-'">-</div>
+        <div class="sub" th:text="${s.total()} + ' checks'">0 checks</div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="panel">
+        <div class="panel-head"><h2>Response time (ms)</h2><span class="muted small-text">Hourly average</span></div>
+        <div class="panel-body">
+          <div class="chart-box" th:if="${hasTrend}"><canvas th:data-chart="${trendJson}" data-metric="response" aria-label="Response time trend"></canvas></div>
+          <div class="empty compact" th:unless="${hasTrend}">No checks in the last 24 hours.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Availability (%)</h2><span class="muted small-text">Hourly</span></div>
+        <div class="panel-body">
+          <div class="chart-box" th:if="${hasTrend}"><canvas th:data-chart="${trendJson}" data-metric="availability" aria-label="Availability trend"></canvas></div>
+          <div class="empty compact" th:unless="${hasTrend}">No checks in the last 24 hours.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Recent health checks</h2>
+        <a class="small-text" th:href="@{/history}">View history</a>
+      </div>
+      <div class="empty compact" th:if="${#lists.isEmpty(recentChecks)}">No checks have run yet. The first check runs within a few seconds of adding an endpoint.</div>
+      <th:block th:unless="${#lists.isEmpty(recentChecks)}"><div th:replace="~{fragments/components :: checkTable(${recentChecks}, true)}"></div></th:block>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Recent incidents</h2>
+        <a class="small-text" th:href="@{/incidents}">View incidents</a>
+      </div>
+      <div class="empty compact" th:if="${#lists.isEmpty(recentIncidents)}">No incidents have been raised.</div>
+      <th:block th:unless="${#lists.isEmpty(recentIncidents)}"><div th:replace="~{fragments/components :: incidentList(${recentIncidents})}"></div></th:block>
+    </div>
+  </th:block>
+</th:block>
+</body>
+</html>

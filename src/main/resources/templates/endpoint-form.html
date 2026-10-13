@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(${editing} ? 'Edit endpoint' : 'Add endpoint', ~{::content}, 'endpoints')}">
+<body>
+<th:block th:fragment="content">
+  <div class="page-head">
+    <div>
+      <h1 th:text="${editing} ? 'Edit endpoint' : 'Add endpoint'">Add endpoint</h1>
+      <p>InfraSight sends an HTTP GET request to this address on the schedule you set.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-body">
+      <form class="form-grid" method="post" novalidate th:object="${form}"
+            th:action="${editing} ? @{/endpoints/{id}(id=${endpoint.id})} : @{/endpoints}">
+
+        <div class="form-row-h">
+          <label class="form-label" for="name">Name</label>
+          <div class="control">
+            <input type="text" class="form-control" th:field="*{name}" th:errorclass="is-invalid" maxlength="100" placeholder="Production API" autofocus>
+            <div class="invalid-feedback" th:errors="*{name}"></div>
+          </div>
+        </div>
+
+        <div class="form-row-h">
+          <label class="form-label" for="url">URL</label>
+          <div class="control">
+            <input type="text" class="form-control mono" th:field="*{url}" th:errorclass="is-invalid" maxlength="2000" placeholder="https://example.com/health">
+            <div class="invalid-feedback" th:errors="*{url}"></div>
+            <div class="form-text">Only http:// and https:// addresses. Private, loopback and link-local addresses are blocked.</div>
+          </div>
+        </div>
+
+        <div class="form-row-h">
+          <label class="form-label" for="intervalSeconds">Check interval (seconds)</label>
+          <div class="control">
+            <input type="number" class="form-control" th:field="*{intervalSeconds}" th:errorclass="is-invalid" min="30" max="86400">
+            <div class="invalid-feedback" th:errors="*{intervalSeconds}"></div>
+            <div class="form-text">How often the endpoint is checked. Minimum 30.</div>
+          </div>
+        </div>
+
+        <div class="form-row-h">
+          <label class="form-label" for="timeoutSeconds">Timeout (seconds)</label>
+          <div class="control">
+            <input type="number" class="form-control" th:field="*{timeoutSeconds}" th:errorclass="is-invalid" min="1" max="30">
+            <div class="invalid-feedback" th:errors="*{timeoutSeconds}"></div>
+            <div class="form-text">A check that takes longer than this counts as failed. Maximum 30.</div>
+          </div>
+        </div>
+
+        <div class="form-row-h">
+          <label class="form-label" for="expectedStatus">Expected status code</label>
+          <div class="control">
+            <input type="number" class="form-control" th:field="*{expectedStatus}" th:errorclass="is-invalid" min="100" max="599" placeholder="Any 2xx or 3xx">
+            <div class="invalid-feedback" th:errors="*{expectedStatus}"></div>
+            <div class="form-text">Optional. Leave blank to treat any 2xx or 3xx response as healthy.</div>
+          </div>
+        </div>
+
+        <div class="form-row-h">
+          <label class="form-label" for="failureThreshold">Open an incident after</label>
+          <div class="control">
+            <input type="number" class="form-control" th:field="*{failureThreshold}" th:errorclass="is-invalid" min="1" max="20">
+            <div class="invalid-feedback" th:errors="*{failureThreshold}"></div>
+            <div class="form-text">Consecutive failed (or slow) checks before an incident is raised.</div>
+          </div>
+        </div>
+
+        <div class="form-row-h">
+          <label class="form-label" for="slowThresholdMs">Slow response limit (ms)</label>
+          <div class="control">
+            <input type="number" class="form-control" th:field="*{slowThresholdMs}" th:errorclass="is-invalid" min="100" max="60000" placeholder="Not set">
+            <div class="invalid-feedback" th:errors="*{slowThresholdMs}"></div>
+            <div class="form-text">Optional. Successful checks slower than this count toward a slow-response warning.</div>
+          </div>
+        </div>
+
+        <div class="form-row-h">
+          <span class="form-label" style="padding-top:0.4rem">Monitoring</span>
+          <div class="control">
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" th:field="*{enabled}">
+              <label class="form-check-label" for="enabled">Enabled</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" th:text="${editing} ? 'Save changes' : 'Add endpoint'">Save</button>
+          <a class="btn btn-outline-secondary" th:href="${editing} ? @{/endpoints/{id}(id=${endpoint.id})} : @{/endpoints}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('Error', ~{::content}, '')}">
+<body>
+<th:block th:fragment="content">
+  <div class="err-page">
+    <p class="code" th:if="${status != null}" th:text="'Error ' + ${status}">Error 500</p>
+    <h1 class="h4" th:text="${status == 404} ? 'Page not found' : (${status == 403} ? 'Request not allowed' : 'Something went wrong')">Something went wrong</h1>
+    <p th:text="${#strings.isEmpty(message)} ? (${status == 403} ? 'The form expired or was not valid. Go back, reload the page and try again.' : 'The request could not be completed.') : ${message}">The request could not be completed.</p>
+    <a class="btn btn-outline-secondary" th:href="@{/}">Back to dashboard</a>
+  </div>
+</th:block>
+</body>
+</html>
